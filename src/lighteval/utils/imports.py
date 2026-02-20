@@ -63,6 +63,10 @@ def is_package_available(package: str | Requirement | Extra):
         if not package.specifier:
             return True
 
+        # Allow newer vllm than lighteval's pin (e.g. 0.15.x when pyproject has 0.10.x)
+        if package.name == "vllm" and installed >= Version("0.10.0"):
+            return True
+
         return installed in package.specifier
 
 

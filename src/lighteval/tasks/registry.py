@@ -328,8 +328,11 @@ class Registry:
         configs = {}
         for task_file in files:
             module_name = task_file.stem
-            module = importlib.import_module(f"{module_prefix}.{module_name}")
-            configs.update(Registry._extract_configs(module))
+            try:
+                module = importlib.import_module(f"{module_prefix}.{module_name}")
+                configs.update(Registry._extract_configs(module))
+            except Exception as e:
+                logger.warning(f"Failed to load task module {module_prefix}.{module_name}: {e}")
         return configs
 
     @staticmethod
