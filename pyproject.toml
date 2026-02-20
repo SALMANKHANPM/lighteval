@@ -64,9 +64,9 @@ dependencies = [
     "openai",
     "accelerate",
     "huggingface_hub[hf_xet]>=0.30.2",
-    "torch>=2.0,<3.0",
+    "torch>=2.0",
     "GitPython>=3.1.41", # for logging
-    "datasets>=4.0.0",
+    "datasets<=4.0.0", # trust_remote_code is no longer supported at >4
     "pydantic",
     "numpy>=2",  # pinned to avoid incompatibilities
     "hf-xet>=1.1.8",  # pinned to avoid failing test suite
@@ -103,7 +103,7 @@ nanotron = [
   "tensorboardX"
 ]
 tensorboardX = ["tensorboardX"]
-vllm = ["vllm>=0.10.0,<0.10.2", "ray", "more_itertools"]
+vllm = ["vllm>=0.10.0", "ray", "more_itertools"]
 sglang = ["sglang"]
 quality = ["ruff>=v0.11.0","pre-commit"]
 tests = ["pytest>=7.4.0","deepdiff","pip>=25.2"]
@@ -122,6 +122,7 @@ multilingual = [
     "spacy[ja,ko,th]>=3.8.0",
     "jieba", # for chinese tokenizer
     "pyvi", # for vietnamese tokenizer
+    "language_data"
 ]
 math = ["latex2sympy2_extended==1.0.6"]
 wandb = ["wandb"]
