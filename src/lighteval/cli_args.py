@@ -121,7 +121,7 @@ load_tasks_multilingual = Arg(
             rich_help_panel=HELP_PANEL_NAME_1,
         ),
     ],
-    default=False,
+    default=True,
 )
 
 # Logging Parameters (HELP_PANEL_NAME_2)
