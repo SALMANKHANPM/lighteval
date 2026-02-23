@@ -52,7 +52,7 @@ if is_package_available("vllm"):
         destroy_distributed_environment,
         destroy_model_parallel,
     )
-    from vllm.tokenizers import get_tokenizer
+    from vllm.transformers_utils.tokenizer import get_tokenizer
     from vllm.v1.engine.async_llm import AsyncEngineArgs, AsyncLLM
 
     logging.getLogger("vllm").propagate = True
@@ -420,7 +420,7 @@ class VLLMModel(LightevalModel):
         if generate:
             sampling_params.n = num_samples
             sampling_params.max_tokens = max_new_tokens
-            sampling_params.stop = list(stop_tokens) if stop_tokens else []
+            sampling_params.stop = stop_tokens
             sampling_params.logprobs = 1 if returns_logits else 0
             if num_samples > 1 and sampling_params.temperature == 0:
                 raise ValueError(
@@ -437,8 +437,7 @@ class VLLMModel(LightevalModel):
             @ray.remote(num_gpus=self.tensor_parallel_size)
             def run_inference_one_model(model_args: dict, sampling_params: SamplingParams, requests):
                 llm = LLM(**model_args)
-                prompts = [{"prompt_token_ids": token_ids} for token_ids in requests]
-                return llm.generate(prompts, sampling_params=sampling_params)
+                return llm.generate(prompt_token_ids=requests, sampling_params=sampling_params)
 
             # dispatch requests to all self.data_parallel_size workers, in interleaved fashion
             # interleaved important to balance context lengths across workers
@@ -455,9 +454,8 @@ class VLLMModel(LightevalModel):
                 if x is not None
             ]
         else:
-            prompts = [{"prompt_token_ids": token_ids} for token_ids in inputs]
             outputs = self.model.generate(
-                prompts,
+                prompt_token_ids=inputs,
                 sampling_params=sampling_params,
                 use_tqdm=True,
             )
