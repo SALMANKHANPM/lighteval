@@ -1,0 +1,3 @@
+VLLM_ENABLE_V1_MULTIPROCESSING=0 python -m lighteval vllm \
+  "model_name=google/gemma-3-1b-it,max_model_length=4096,gpu_memory_utilization=0.95" \
+  "community_hellaswag_tel_hybrid"
