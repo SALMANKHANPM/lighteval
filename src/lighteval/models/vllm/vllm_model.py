@@ -510,8 +510,17 @@ class VLLMModel(LightevalModel):
                     outputs_doc, tokenized_contexts_doc, tokenized_continuations_doc
                 ):
                     continuation_logprobs = []
-                    for token, logprobs in zip(continuation[::-1], output.prompt_logprobs[::-1]):
-                        continuation_logprobs.append(logprobs[token])
+                    filtered_prompt_logprobs = [lp for lp in output.prompt_logprobs if lp is not None]
+                    for token, logprobs in zip(continuation[::-1], filtered_prompt_logprobs[::-1]):
+                        if token in logprobs:
+                            continuation_logprobs.append(logprobs[token])
+                        else:
+                            from vllm.logprobs import Logprob
+
+                            min_logprob = min(logprobs.values(), key=lambda x: x.logprob)
+                            continuation_logprobs.append(
+                                Logprob(logprob=min_logprob.logprob - 1.0, rank=len(logprobs) + 1)
+                            )
 
                     bool_score = all(logprob.rank == 1 for logprob in continuation_logprobs)
                     continuation_logprobs = [logprob.logprob for logprob in continuation_logprobs]

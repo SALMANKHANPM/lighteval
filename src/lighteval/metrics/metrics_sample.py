@@ -290,7 +290,24 @@ class LoglikelihoodAcc(SampleLevelComputation):
             else choices_logprobs
         )
 
-        best_choice = np.argmax(normalized_log_probs)
+        # Ensure we never pass None values to numpy, which would create an
+        # object-dtype array and can trigger TypeError comparisons in argmax.
+        if normalized_log_probs is None:
+            return 0
+
+        cleaned_log_probs_list: list[float] = []
+        for lp in normalized_log_probs:
+            if lp is None:
+                # Treat missing scores as very bad (effectively -inf) so they
+                # are never selected as best.
+                cleaned_log_probs_list.append(float("-inf"))
+            else:
+                cleaned_log_probs_list.append(lp)
+
+        if not cleaned_log_probs_list:
+            return 0
+
+        best_choice = int(np.argmax(np.asarray(cleaned_log_probs_list, dtype=float)))
         return int(best_choice in gold_ixs)
 
 
