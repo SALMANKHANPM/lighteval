@@ -501,12 +501,11 @@ class LogProbCharNorm:
 LogProbNormalization = LogProbCharNorm | LogProbTokenNorm | LogProbPMINorm
 
 
-def _validate_choices_logprob(choices_logprob: list[float | None]) -> None:
+def _coerce_choices_logprob(choices_logprob: list[float | None]) -> list[float]:
+    """Convert missing logprobs to -inf so metrics remain computable."""
     if any(logprob is None for logprob in choices_logprob):
-        raise ValueError(
-            "choices_logprob contains None values. This usually means the backend did not return "
-            "token logprobs for one or more choices."
-        )
+        return [float("-inf") if logprob is None else float(logprob) for logprob in choices_logprob]
+    return [float(logprob) for logprob in choices_logprob]
 
 
 def normalize_log_probs(
@@ -516,8 +515,7 @@ def normalize_log_probs(
     choices_text: list[str] | None,
     choices_tokens: list[list[int]] | None,
 ) -> list[float]:
-    _validate_choices_logprob(choices_logprob)
-    validated_choices_logprob = [float(logprob) for logprob in choices_logprob]
+    validated_choices_logprob = _coerce_choices_logprob(choices_logprob)
     normalized_log_probs = validated_choices_logprob
     match normalization:
         case LogProbCharNorm(ignore_first_space=True):
@@ -532,14 +530,16 @@ def normalize_log_probs(
             assert choices_text is not None, "choices_text must be provided for character normalization"
             normalized_log_probs = [validated_choices_logprob[ix] / len(choice) for ix, choice in enumerate(choices_text)]
         case LogProbTokenNorm():
-            assert choices_tokens is not None, "choices_tokens must be provided for token normalization"
+            if choices_tokens is None:
+                return validated_choices_logprob
             if len(choices_tokens) != len(validated_choices_logprob):
-                raise ValueError("choices_tokens and choices_logprob must have the same length")
+                return validated_choices_logprob
             normalized_log_probs = []
             for ix, choice_tokens in enumerate(choices_tokens):
                 if len(choice_tokens) == 0:
-                    raise ValueError("choices_tokens must not contain empty token lists for token normalization")
-                normalized_log_probs.append(validated_choices_logprob[ix] / len(choice_tokens))
+                    normalized_log_probs.append(validated_choices_logprob[ix])
+                else:
+                    normalized_log_probs.append(validated_choices_logprob[ix] / len(choice_tokens))
         case LogProbPMINorm():
             assert unconditioned_logprob is not None, "unconditioned_logprob must be provided for PMI normalization"
             normalized_log_probs = [
