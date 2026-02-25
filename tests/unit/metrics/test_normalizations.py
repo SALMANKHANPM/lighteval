@@ -61,3 +61,13 @@ def test_empty_input():
     assert normalize_log_probs(LogProbCharNorm(), empty_logprob, None, empty_text, None) == []
     assert normalize_log_probs(LogProbTokenNorm(), empty_logprob, None, None, empty_tokens) == []
     assert normalize_log_probs(LogProbPMINorm(), empty_logprob, empty_logprob, None, None) == []
+
+
+def test_token_norm_rejects_none_logprobs():
+    with pytest.raises(ValueError, match="choices_logprob contains None values"):
+        normalize_log_probs(LogProbTokenNorm(), [None, 1.0], None, None, [[1], [2]])
+
+
+def test_token_norm_rejects_empty_token_choice():
+    with pytest.raises(ValueError, match="must not contain empty token lists"):
+        normalize_log_probs(LogProbTokenNorm(), [1.0, 2.0], None, None, [[], [2]])
