@@ -61,3 +61,14 @@ def test_empty_input():
     assert normalize_log_probs(LogProbCharNorm(), empty_logprob, None, empty_text, None) == []
     assert normalize_log_probs(LogProbTokenNorm(), empty_logprob, None, None, empty_tokens) == []
     assert normalize_log_probs(LogProbPMINorm(), empty_logprob, empty_logprob, None, None) == []
+
+
+def test_token_norm_none_logprobs_are_coerced_to_negative_infinity():
+    result = normalize_log_probs(LogProbTokenNorm(), [None, 1.0], None, None, [[1], [2]])
+    assert result[0] == float("-inf")
+    assert result[1] == pytest.approx(1.0)
+
+
+def test_token_norm_empty_token_choice_falls_back_to_raw_logprob():
+    result = normalize_log_probs(LogProbTokenNorm(), [1.0, 2.0], None, None, [[], [2]])
+    assert result == pytest.approx([1.0, 2.0])

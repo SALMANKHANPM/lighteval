@@ -20,10 +20,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+from importlib import metadata
 from typing import Optional
 
 from typer import Option
 from typing_extensions import Annotated
+
+
+def _check_vllm_numpy_compatibility(*, numpy_version: str, numba_installed: bool) -> None:
+    """Validate NumPy/Numba compatibility required by vLLM code paths."""
+    major, minor, *_ = (numpy_version.split(".") + ["0", "0"])
+    numpy_major = int(major)
+    numpy_minor = int(minor)
+
+    if numba_installed and (numpy_major > 2 or (numpy_major == 2 and numpy_minor >= 3)):
+        raise RuntimeError(
+            "Incompatible NumPy/Numba environment for vLLM: "
+            f"detected numpy=={numpy_version} with numba installed. "
+            "Current numba releases used by vLLM require NumPy<=2.2. "
+            "Please run `pip install \"numpy<2.3\"` in this environment."
+        )
+
+
+def _validate_vllm_runtime_compatibility() -> None:
+    """Run preflight checks before initializing vLLM to fail with actionable errors."""
+    numpy_version = metadata.version("numpy")
+    try:
+        metadata.version("numba")
+        numba_installed = True
+    except metadata.PackageNotFoundError:
+        numba_installed = False
+
+    _check_vllm_numpy_compatibility(numpy_version=numpy_version, numba_installed=numba_installed)
+
 
 from lighteval.cli_args import (
     HELP_PANEL_NAME_4,
@@ -83,6 +112,8 @@ def vllm(
         dict: Evaluation results containing metrics and scores for all tasks
     """
     import yaml
+
+    _validate_vllm_runtime_compatibility()
 
     from lighteval.logging.evaluation_tracker import EvaluationTracker
     from lighteval.models.vllm.vllm_model import VLLMModelConfig
