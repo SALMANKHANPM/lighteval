@@ -63,10 +63,10 @@ dependencies = [
     "inspect-ai>=0.3.140",
     "openai",
     "accelerate",
-    "huggingface_hub[hf_xet]>=0.30.2",
+    "huggingface_hub[hf_xet]>=0.30.2,<1.0",  # transformers currently requires huggingface-hub<1.0
     "torch>=2.0",
     "GitPython>=3.1.41", # for logging
-    "datasets<=4.0.0", # trust_remote_code is no longer supported at >4
+    "datasets>=2.20.0,<4.0.0",  # >=2.20 for modern pyarrow, <4 for trust_remote_code support
     "pydantic",
     "numpy>=2",  # pinned to avoid incompatibilities
     "hf-xet>=1.1.8",  # pinned to avoid failing test suite
@@ -103,7 +103,7 @@ nanotron = [
   "tensorboardX"
 ]
 tensorboardX = ["tensorboardX"]
-vllm = ["vllm", "ray", "more_itertools"]
+vllm = ["vllm", "ray", "more_itertools", "numpy<2.3"]  # numba (used by vLLM) currently requires NumPy<=2.2
 sglang = ["sglang"]
 quality = ["ruff>=v0.11.0","pre-commit"]
 tests = ["pytest>=7.4.0","deepdiff","pip>=25.2"]
